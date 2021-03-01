@@ -17,10 +17,10 @@ async function FetchServersForPlaceIdAtCursor(PlaceId, Cursor) { // hmm....
                 for (const FetchedServer of FetchedServers) {
                     const Server = {
                         Id: FetchedServer.id || "?",
-                        Playing: FetchedServer.playing || "?",
-                        MaxPlayers: FetchedServer.maxPlayers || "?",
-                        FPS: FetchedServer.fps || "?",
-                        Ping: FetchedServer.ping || "?"
+                        Playing: FetchedServer.playing || 0,
+                        MaxPlayers: FetchedServer.maxPlayers || 0,
+                        FPS: FetchedServer.fps || 0,
+                        Ping: FetchedServer.ping || 0
                     }
             
                     Servers.push(Server)
