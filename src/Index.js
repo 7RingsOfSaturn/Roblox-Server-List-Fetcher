@@ -1,26 +1,43 @@
 const Axios = require(`axios`)
 const Readline = require(`readline`)
 
-async function FetchServersForPlaceIdAtCursor(PlaceId, Cursor) {
-    const Request = Axios.get(`https://games.roblox.com/v1/games/${PlaceId}/servers/public?limit=100&cursor=${Cursor}`)
-    const Response = await Request
+const ErrorTimeout = 500
 
-    const Servers = []
-    const FetchedServers = Response.data.data
+async function Sleep(Timeout) {
+    return new Promise((Resolve) => setTimeout(Resolve, Timeout))
+}
 
-    for (const FetchedServer of FetchedServers) {
-        const Server = {
-            Id: FetchedServer.id,
-            Playing: FetchedServer.playing,
-            MaxPlayers: FetchedServer.maxPlayers,
-            FPS: FetchedServer.fps,
-            Ping: FetchedServer.ping
-        }
+async function FetchServersForPlaceIdAtCursor(PlaceId, Cursor) { // hmm....
+    const FetchPromise = new Promise((Resolve) => {
+        Axios.get(`https://games.roblox.com/v1/games/${PlaceId}/servers/public?limit=100&cursor=${Cursor}`)
+            .then((Response) => {
+                const Servers = []
+                const FetchedServers = Response.data.data
+            
+                for (const FetchedServer of FetchedServers) {
+                    const Server = {
+                        Id: FetchedServer.id,
+                        Playing: FetchedServer.playing,
+                        MaxPlayers: FetchedServer.maxPlayers,
+                        FPS: FetchedServer.fps,
+                        Ping: FetchedServer.ping
+                    }
+            
+                    Servers.push(Server)
+                }
+            
+                Resolve([Servers, Response.data.nextPageCursor])
+            })
+            .catch(async () => {
+                process.title = `Caught error. Retrying request in ${ErrorTimeout}ms`
 
-        Servers.push(Server)
-    }
+                await Sleep(ErrorTimeout)
 
-    return [Servers, Response.data.nextPageCursor]
+                Resolve(FetchServersForPlaceIdAtCursor(PlaceId, Cursor))
+            })
+    }) 
+
+    return FetchPromise
 }
 
 async function GetServersForPlaceId(PlaceId) {
@@ -32,7 +49,7 @@ async function GetServersForPlaceId(PlaceId) {
         const [FetchedServers, NextCursor] = await FetchServersForPlaceIdAtCursor(PlaceId, Cursor)
 
         for (const Server of FetchedServers) {
-            process.title = `Fetched ${Server.Id} [${Server.Playing}/${Server.MaxPlayers}]`
+            process.title = `Fetched ${Server.Id} | ${Server.Playing} playing / ${Server.MaxPlayers} max | ${Server.Ping}ms ping`
             Servers.push(Server)
         }
 
@@ -53,11 +70,15 @@ async function OnInput(Input) {
 
         for (const Server of Servers) {
             const LauncherScript = `Roblox.GameLauncher.joinGameInstance(${PlaceId}, "${Server.Id}")`
+            
+            const Ping = `Ping: ` + `${Server.Ping || "?"}`.padEnd(4) + `ms`
+            const FPS = `\tFPS: ` + `${Math.floor(Server.FPS)}`.padStart(2)
+            const Playing = `\tPlaying: ${Server.Playing} of ${Server.MaxPlayers}`
+            const Script = `\tScript: ${LauncherScript}`
 
-            console.log(`Ping: ` + `${Server.Ping || "?"}`.padEnd(4) + `ms`, `\tFPS: ` + `${Math.floor(Server.FPS)}`.padStart(2), `\tPlaying: ${Server.Playing} of ${Server.MaxPlayers}`, `\tScript: ${LauncherScript}`)
+            console.log(Ping, FPS, Playing, Script)
 
             TotalPlayers = TotalPlayers + Server.Playing
-            //console.log(Server.Id, `${Server.Playing}/${Server.MaxPlayers}`)
         }
 
         process.title = `Found ${TotalPlayers} players and ${Servers.length} servers for place id ${PlaceId}`
