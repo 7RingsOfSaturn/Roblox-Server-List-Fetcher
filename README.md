@@ -3,8 +3,10 @@ Quick script for fetching all of the running servers for a specific place id as 
 
 ### Steps
 
-1. Download and Run the script using Node. `node Index.js`
-3. Paste in a game's URL. 
+1. Download and Run the script using Node. 
+    *`node Index.js`*
+ 
+2. Paste in a game's URL. 
 
 ### Example
 
