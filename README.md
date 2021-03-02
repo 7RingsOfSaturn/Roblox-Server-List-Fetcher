@@ -9,7 +9,7 @@ You can join a server by copying the join script for it and running it in your b
 1. Download and Run the script using Node. 
     *`node Index.js`*
  
-2. Paste in a game's URL. 
+2. Paste in a game's URL and press enter. 
 
 ### Example
 
